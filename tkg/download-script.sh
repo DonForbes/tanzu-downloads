@@ -1,9 +1,7 @@
 #!/bin/bash
 # Setup authentication variables.
-export VMWUSER=<Username to access the vmware downloads>
-export VMWPASS=<Password>
+source ./variables.sh
 
-DOWNLOAD_LOCATION=/path/to/where/you/want/to/download/files
 # These variables are used to create subdirectories of the download location to put different files.
 # TKG_DIR - downloads from vmware.com for tanzu command line, ISOs etc.
 # TKG_IMAGES_DIR - All the container images used to power Tanzu Kubernetes Grid
@@ -19,11 +17,28 @@ FORCE_DOWNLOAD=false
 # The process of identifying all necessary images for TKG requires a number of activities.  The tmp directory is used to perform this processing
 TMP_BASE_DIR=/tmp
 
-# At time of writing only TKG 1.3.1 is supported....
-CLI_VERSION=1.3.1
+# At time of writing only TKG 1.5.1 is supported....
+CLI_VERSION=1.5.1
 
 
 # Routines
+validate()
+{
+	if [[ -z "${VMWUSER}" ]]; then
+	   echo "You must export the VMWUSER env variable with a valid VMWare download user." 
+	   exit 1
+	fi
+	if [[ -z "$VMWPASS}" ]]; then
+		echo "You must export the VMWPASS env variable with a valid VMware download user password." 
+	   exit 1
+	fi
+	if [[ -z "${DOWNLOAD_LOCATION}}" ]]; then
+		echo "You must export the DOWNLOAD_LOCATION env variable with a valid local path to where downloads will be put." 
+	   exit 1
+	fi
+	echo "Completed basic validation"
+}
+
 download_file()
 {
         l_filename=$1
@@ -139,6 +154,7 @@ get_extension_images()
 # End get_extension_images
 
 # Main processing
+validate
 get-tkg-components
-get_tkg_images
-get_extension_images
+#get_tkg_images
+#get_extension_images
