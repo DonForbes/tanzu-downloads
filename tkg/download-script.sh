@@ -17,10 +17,6 @@ FORCE_DOWNLOAD=false
 # The process of identifying all necessary images for TKG requires a number of activities.  The tmp directory is used to perform this processing
 TMP_BASE_DIR=/tmp
 
-# At time of writing only TKG 1.5.1 is supported....
-CLI_VERSION=1.5.1
-
-
 # Routines
 validate()
 {
@@ -43,8 +39,22 @@ download_file()
 {
         l_filename=$1
         l_download_dir=$2
-        vmw-cli cp ${l_filename}
-        mv ${l_filename} ${l_download_dir}
+        if [[ ! "${l_filename}" =~ .*ova$ ]];
+       	then
+		echo "not an ova file"
+       		vmw-cli cp ${l_filename}
+       		mv ${l_filename} ${l_download_dir}
+        else
+		echo "Is an ova file"
+        	if [ "${GET_OVA}" == true ];
+        	then
+			echo "downloading ova"
+        		vmw-cli cp ${l_filename}
+       			mv ${l_filename} ${l_download_dir}
+        	else
+        		echo "Not pulling the ova image [$l_filename] due to configuration"
+        	fi
+        fi
 }
 # End download_file
 
@@ -71,7 +81,7 @@ do
                                 download_file "${filename}" "${DOWNLOAD_LOCATION}/${TKG_DIR}"
                         fi
                 else
-                        echo "gettting as don't have yet."
+                        echo "getting as don't have yet."
                         download_file "${filename}" "${DOWNLOAD_LOCATION}/${TKG_DIR}"
                 fi
         fi
@@ -139,7 +149,7 @@ get_extension_images()
                                 IMAGES=$(yq -j e '.. | select(has("image"))|.image'  ${l_values_file} | grep -v null)
                                 for image in $(echo $IMAGES| jq -r '[.repository, .name, .tag]| @csv' )
                                 do
-                                        get_image $image ${DOWNLOAD_LOCATION}/${EXTENSIONS_IMAGE_DIR}
+                                    get_image $image ${DOWNLOAD_LOCATION}/${EXTENSIONS_IMAGE_DIR}
                                 done
                                 ;;
                         *)
@@ -156,5 +166,10 @@ get_extension_images()
 # Main processing
 validate
 get-tkg-components
-#get_tkg_images
-#get_extension_images
+if [ "$GET_IMAGES" == true ];
+then
+	get_tkg_images
+	get_extension_images
+else
+	echo "Not getting the images"
+fi
